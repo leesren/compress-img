@@ -6,7 +6,7 @@ const path = require('path');
 const tinify = require('tinify');
 tinify.key = '6YF3nRN93XWXs4xdWKYKVQbmghzJS4q8';
 
-export class FileSystemManager {
+class FileSystemManager {
   readDir(filePath) {
     return new Promise((resolve, reject) => {
       fs.readdir(filePath, (error, files) => {
@@ -110,15 +110,15 @@ export class FileSystemManager {
       console.error(error);
     }
   }
-  tinyPngHandle(filePath, destPath, option) {
+  tinyPngHandle(filePath, destPath, filter) {
     if (/.(png|jpg|jpeg)$/i.test(filePath)) {
       const source = tinify.fromFile(filePath);
       source.toFile(destPath);
     } else {
-      this.copyFile(filePath, destPath);
+      !filter && this.copyFile(filePath, destPath);
     }
   }
-  async compressImg(filePath, destPath, isCompress = false) {
+  async compressImg(filePath, destPath, filter = false) {
     // 显示文件夹下的所有文件
     try {
       await this.exists(destPath, true);
@@ -134,12 +134,12 @@ export class FileSystemManager {
 
         if (isFile) {
           // console.log('文件 ', fileDir); // 读取文件内容
-          this.tinyPngHandle(fileDir, subDir, {});
+          this.tinyPngHandle(fileDir, subDir, filter);
         }
         if (isDir) {
           await this.exists(subDir, true);
           // console.log('目录 ', fileDir); // 读取文件内容
-          this.compressImg(fileDir, subDir);
+          this.compressImg(fileDir, subDir, filter);
         }
       }
     } catch (error) {
@@ -152,4 +152,11 @@ const fsm = new FileSystemManager();
 // node  index.js ../dist ../dest
 const args = process.argv.splice(2);
 // fsm.compressImg('../dist', '../dest', true);
-fsm.compressImg(args[0], args[1], true);
+let isFilter =
+  'filter' === args[2]
+    ? true
+    : /filter=/i.test(args[2]) && args[2].split('=')[1] === 'true'
+    ? true
+    : false;
+debugger;
+fsm.compressImg(args[0], args[1], isFilter);
